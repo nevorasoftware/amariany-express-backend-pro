@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String   @default("Administrador Amairany")
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Departamento {
+  id         String      @id @default(uuid())
+  nombre     String      @unique
+  municipios Municipio[]
+  rutas      RutaEntrega[]
+}
+
+model Municipio {
+  id             String       @id @default(uuid())
+  nombre         String
+  departamentoId String
+  departamento   Departamento @relation(fields: [departamentoId], references: [id], onDelete: Cascade)
+  distritos      Distrito[]
+  rutas          RutaEntrega[]
+
+  @@unique([nombre, departamentoId])
+}
+
+model Distrito {
+  id          String      @id @default(uuid())
+  nombre      String
+  municipioId String
+  municipio   Municipio   @relation(fields: [municipioId], references: [id], onDelete: Cascade)
+  rutas       RutaEntrega[]
+
+  @@unique([nombre, municipioId])
+}
+
+model RutaEntrega {
+  id                 String        @id @default(uuid())
+  lugarPrincipal     String        // Ej: TACACHICO, OPICO, LA UNIÓN (se resalta en negrita)
+  lugarReferencia    String        // Ej: PARQUE CENTRAL FRENTE AL INSTITUTO CATOLICO
+  dias               String        // Ej: LUNES Y JUEVES, JUEVES
+  horario            String        // Ej: 8:00 A.M - 8:30 A.M
+  imagenUrl          String?       // URL de la imagen del banner subida
+  tipoPunto          String        @default("PUNTO DE ENTREGA") // PUNTO DE ENTREGA, CASILLERO, BODEGA CENTRAL
+  activo             Boolean       @default(true)
+
+  departamentoId     String?
+  departamento       Departamento? @relation(fields: [departamentoId], references: [id], onDelete: SetNull)
+  departamentoNombre String?
+
+  municipioId        String?
+  municipio          Municipio?    @relation(fields: [municipioId], references: [id], onDelete: SetNull)
+  municipioNombre    String?
+
+  distritoId         String?
+  distrito           Distrito?     @relation(fields: [distritoId], references: [id], onDelete: SetNull)
+  distritoNombre     String?
+
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model SiteConfig {
+  id             String   @id @default("default")
+  logoUrl        String   @default("/uploads/logo.svg")
+  siteName       String   @default("Amairany Express")
+  primaryColor   String   @default("#4C0070")
+  secondaryColor String   @default("#ED0047")
+  bgColor        String   @default("#F3F3F3")
+  updatedAt      DateTime @updatedAt
+}
+
+model Seller {
+  id                  String   @id @default(uuid())
+  nombre              String
+  dui                 String?
+  tienda              String?
+  correo              String?
+  whatsapp            String?
+  cuentaBancoAgricola String?
+  estado              String   @default("ACTIVO")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Package {
+  id                String   @id @default(uuid())
+  codigo            String?  @unique
+  cliente           String
+  destino           String
+  vendedorNombre    String
+  valor             Float    @default(0.0)
+  envio             Float    @default(0.0)
+  total             Float    @default(0.0)
+  telefono          String
+  fechaRecepcion    String?
+  fechaEntrega      String?
+  fechaPagado       String?
+  fechaAbonado      String?
+  imagenUrl         String?
+  imagenEntregaUrl  String?
+  tipoPago          String   @default("EFECTIVO")
+  estado            String   @default("RECEPCIONADO")
+  estadoLiquidacion String   @default("PENDIENTE")
+  planillaId        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Planilla {
+  id          String   @id @default(uuid())
+  codigo      String   @unique
+  fecha       String
+  tipoPago    String   @default("TRANSFERENCIA")
+  montoTotal  Float    @default(0.0)
+  estado      String   @default("GENERADA")
+  detalleJson String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+
