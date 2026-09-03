@@ -467,6 +467,37 @@ async function getSocioById(id) {
   return await prisma.socio.findUnique({ where: { id } });
 }
 
+// Helper para crear/sincronizar cuenta de Usuario de plataforma para Socios
+async function syncSocioUser(correo, nombre) {
+  if (!correo || !correo.trim()) return;
+  const cleanEmail = correo.trim().toLowerCase();
+  const defaultPass = 'Socio2026!';
+  try {
+    const hashedPassword = await bcrypt.hash(defaultPass, 10);
+    const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (existing) {
+      await prisma.user.update({
+        where: { email: cleanEmail },
+        data: {
+          name: nombre || existing.name,
+          role: 'SOCIO'
+        }
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          email: cleanEmail,
+          password: hashedPassword,
+          name: nombre || 'Socio Repartidor',
+          role: 'SOCIO'
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Error al sincronizar usuario de Socio en DB:", err.message);
+  }
+}
+
 async function createSocio(data) {
   let socioCode = data.codigo && data.codigo.trim() ? data.codigo.trim() : null;
   if (!socioCode) {
@@ -493,7 +524,7 @@ async function createSocio(data) {
     rutasStr = data.ruta.trim();
   }
 
-  return await prisma.socio.create({
+  const createdSocio = await prisma.socio.create({
     data: {
       codigo: socioCode,
       nombre: data.nombre,
@@ -504,6 +535,12 @@ async function createSocio(data) {
       rutas: rutasStr
     }
   });
+
+  if (createdSocio.correo) {
+    await syncSocioUser(createdSocio.correo, createdSocio.nombre);
+  }
+
+  return createdSocio;
 }
 
 async function updateSocio(id, data) {
@@ -518,7 +555,7 @@ async function updateSocio(id, data) {
     rutasStr = data.ruta.trim();
   }
 
-  return await prisma.socio.update({
+  const updatedSocio = await prisma.socio.update({
     where: { id },
     data: {
       nombre: data.nombre !== undefined ? data.nombre : undefined,
@@ -529,6 +566,12 @@ async function updateSocio(id, data) {
       rutas: rutasStr !== undefined ? rutasStr : undefined
     }
   });
+
+  if (updatedSocio.correo) {
+    await syncSocioUser(updatedSocio.correo, updatedSocio.nombre);
+  }
+
+  return updatedSocio;
 }
 
 async function deleteSocio(id) {
