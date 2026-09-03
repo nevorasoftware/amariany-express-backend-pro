@@ -100,7 +100,7 @@ router.post('/analyze-image', upload.single('image'), async (req, res) => {
 // POST /api/packages - Recepcionar / Registrar paquete
 router.post('/', async (req, res) => {
   try {
-    const { codigo, cliente, destino, vendedorNombre, valor, envio, total, telefono, fechaEntrega, imagenUrl, tipoPago, estado } = req.body;
+    const { codigo, cliente, destino, vendedorNombre, valor, envio, total, telefono, fechaEntrega, imagenUrl, tipoPago, estado, rutaCodigo } = req.body;
 
     if (!cliente || !cliente.trim()) {
       return res.status(400).json({ error: 'El nombre del cliente (destinatario) es obligatorio.' });
@@ -127,7 +127,8 @@ router.post('/', async (req, res) => {
       fechaEntrega: fechaEntrega ? fechaEntrega.trim() : new Date().toLocaleDateString('es-SV'),
       imagenUrl: imagenUrl || null,
       tipoPago: tipoPago ? tipoPago.trim().toUpperCase() : 'EFECTIVO',
-      estado: estado || 'RECEPCIONADO'
+      estado: estado || 'RECEPCIONADO',
+      rutaCodigo: rutaCodigo || null
     });
 
     return res.status(201).json({ success: true, data: newPackage });

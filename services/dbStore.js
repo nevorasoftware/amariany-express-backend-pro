@@ -276,6 +276,7 @@ async function getPackages(search = '') {
       { codigo: { contains: term, mode: 'insensitive' } },
       { cliente: { contains: term, mode: 'insensitive' } },
       { destino: { contains: term, mode: 'insensitive' } },
+      { rutaCodigo: { contains: term, mode: 'insensitive' } },
       { vendedorNombre: { contains: term, mode: 'insensitive' } },
       { telefono: { contains: term, mode: 'insensitive' } },
       { tipoPago: { contains: term, mode: 'insensitive' } },
@@ -304,6 +305,28 @@ async function createPackage(data) {
     pkgCode = generatePackageCode();
   }
 
+  // Resolver código de ruta (rutaCodigo) de forma automática si no viene explícito
+  let rCode = data.rutaCodigo ? data.rutaCodigo.trim().toUpperCase() : null;
+  if (!rCode && data.destino) {
+    const match = data.destino.match(/R-[A-Z0-9]{3}/i);
+    if (match) {
+      rCode = match[0].toUpperCase();
+    } else {
+      try {
+        const allRutas = await prisma.rutaEntrega.findMany();
+        const destLower = data.destino.toLowerCase();
+        const foundR = allRutas.find(r => {
+          const pClean = (r.lugarPrincipal || '').toLowerCase();
+          const rClean = (r.lugarReferencia || '').toLowerCase();
+          return (pClean && destLower.includes(pClean)) || (rClean && destLower.includes(rClean));
+        });
+        if (foundR && foundR.codigo) {
+          rCode = foundR.codigo;
+        }
+      } catch (e) {}
+    }
+  }
+
   const tipoPagoVal = (data.tipoPago && ['EFECTIVO', 'TRANSFERENCIA'].includes(data.tipoPago.toUpperCase())) 
     ? data.tipoPago.toUpperCase() 
     : 'EFECTIVO';
@@ -329,7 +352,8 @@ async function createPackage(data) {
       tipoPago: tipoPagoVal,
       estado: data.estado || 'RECEPCIONADO',
       estadoLiquidacion: data.estadoLiquidacion || 'PENDIENTE',
-      planillaId: data.planillaId || null
+      planillaId: data.planillaId || null,
+      rutaCodigo: rCode
     }
   });
 }
@@ -355,6 +379,15 @@ async function updatePackage(id, data) {
   if (data.estado !== undefined) updateData.estado = data.estado;
   if (data.estadoLiquidacion !== undefined) updateData.estadoLiquidacion = data.estadoLiquidacion;
   if (data.planillaId !== undefined) updateData.planillaId = data.planillaId;
+
+  if (data.rutaCodigo !== undefined) {
+    updateData.rutaCodigo = data.rutaCodigo;
+  } else if (data.destino !== undefined) {
+    const match = data.destino.match(/R-[A-Z0-9]{3}/i);
+    if (match) {
+      updateData.rutaCodigo = match[0].toUpperCase();
+    }
+  }
 
   return await prisma.package.update({
     where: { id },

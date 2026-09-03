@@ -116,6 +116,7 @@ model Package {
   estado            String   @default("RECEPCIONADO")
   estadoLiquidacion String   @default("PENDIENTE")
   planillaId        String?
+  rutaCodigo        String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
