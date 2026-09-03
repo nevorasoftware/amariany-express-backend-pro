@@ -47,6 +47,7 @@ model Distrito {
 
 model RutaEntrega {
   id                 String        @id @default(uuid())
+  codigo             String?       @unique
   lugarPrincipal     String        // Ej: TACACHICO, OPICO, LA UNIÓN (se resalta en negrita)
   lugarReferencia    String        // Ej: PARQUE CENTRAL FRENTE AL INSTITUTO CATOLICO
   dias               String        // Ej: LUNES Y JUEVES, JUEVES
@@ -83,6 +84,7 @@ model SiteConfig {
 
 model Seller {
   id                  String   @id @default(uuid())
+  codigo              String?  @unique
   nombre              String
   dui                 String?
   tienda              String?
@@ -129,6 +131,19 @@ model Planilla {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Socio {
+  id        String   @id @default(uuid())
+  codigo    String?  @unique
+  nombre    String
+  telefono  String?
+  correo    String?
+  dui       String?
+  ruta      String?  // Código de la ruta asignada (ej: R-A1B)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 
 
 

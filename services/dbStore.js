@@ -23,9 +23,11 @@ async function getRutas(filters = {}) {
   if (filters.municipio) where.municipioNombre = { equals: filters.municipio, mode: 'insensitive' };
   if (filters.distrito) where.distritoNombre = { equals: filters.distrito, mode: 'insensitive' };
   if (filters.search) {
+    const term = filters.search.trim();
     where.OR = [
-      { lugarPrincipal: { contains: filters.search, mode: 'insensitive' } },
-      { lugarReferencia: { contains: filters.search, mode: 'insensitive' } }
+      { codigo: { contains: term, mode: 'insensitive' } },
+      { lugarPrincipal: { contains: term, mode: 'insensitive' } },
+      { lugarReferencia: { contains: term, mode: 'insensitive' } }
     ];
   }
   return await prisma.rutaEntrega.findMany({
@@ -35,8 +37,24 @@ async function getRutas(filters = {}) {
 }
 
 async function createRuta(data) {
+  let routeCode = data.codigo && data.codigo.trim() ? data.codigo.trim() : null;
+  if (!routeCode) {
+    try {
+      const dbRes = await prisma.$queryRaw`SELECT generar_codigo_ruta() as code`;
+      if (dbRes && dbRes[0] && dbRes[0].code) {
+        routeCode = dbRes[0].code;
+      }
+    } catch (dbErr) {
+      routeCode = generateRouteCode();
+    }
+  }
+  if (!routeCode) {
+    routeCode = generateRouteCode();
+  }
+
   return await prisma.rutaEntrega.create({
     data: {
+      codigo: routeCode,
       lugarPrincipal: data.lugarPrincipal || "NUEVO PUNTO",
       lugarReferencia: data.lugarReferencia || "",
       dias: data.dias || "LUNES A VIERNES",
@@ -107,6 +125,7 @@ async function getSellers(search = '') {
   if (search && search.trim()) {
     const term = search.trim();
     where.OR = [
+      { codigo: { contains: term, mode: 'insensitive' } },
       { nombre: { contains: term, mode: 'insensitive' } },
       { tienda: { contains: term, mode: 'insensitive' } },
       { whatsapp: { contains: term, mode: 'insensitive' } },
@@ -121,8 +140,24 @@ async function getSellers(search = '') {
 }
 
 async function createSeller(data) {
+  let sellerCode = data.codigo && data.codigo.trim() ? data.codigo.trim() : null;
+  if (!sellerCode) {
+    try {
+      const dbRes = await prisma.$queryRaw`SELECT generar_codigo_vendedor() as code`;
+      if (dbRes && dbRes[0] && dbRes[0].code) {
+        sellerCode = dbRes[0].code;
+      }
+    } catch (dbErr) {
+      sellerCode = generateSellerCode();
+    }
+  }
+  if (!sellerCode) {
+    sellerCode = generateSellerCode();
+  }
+
   return await prisma.seller.create({
     data: {
+      codigo: sellerCode,
       nombre: data.nombre,
       dui: data.dui || '',
       tienda: data.tienda || '',
@@ -158,6 +193,36 @@ function generatePackageCode() {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let code = 'P-';
   for (let i = 0; i < 5; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Generador de Código Único de Vendedor (ej. V-7A1)
+function generateSellerCode() {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let code = 'V-';
+  for (let i = 0; i < 3; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Generador de Código Único de Ruta (ej. R-X92)
+function generateRouteCode() {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let code = 'R-';
+  for (let i = 0; i < 3; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Generador de Código Único de Socio (ej. S-3K8)
+function generateSocioCode() {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let code = 'S-';
+  for (let i = 0; i < 3; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
@@ -376,6 +441,76 @@ async function liquidarPackageIndividual(id, estadoLiquidacion = 'PROCESADA') {
   });
 }
 
+// OPERACIONES DE SOCIOS (REPARTIDORES / SOCIOS CON RUTA)
+async function getSocios(search = '') {
+  const where = {};
+  if (search && search.trim()) {
+    const term = search.trim();
+    where.OR = [
+      { codigo: { contains: term, mode: 'insensitive' } },
+      { nombre: { contains: term, mode: 'insensitive' } },
+      { telefono: { contains: term, mode: 'insensitive' } },
+      { correo: { contains: term, mode: 'insensitive' } },
+      { dui: { contains: term, mode: 'insensitive' } },
+      { ruta: { contains: term, mode: 'insensitive' } }
+    ];
+  }
+  return await prisma.socio.findMany({
+    where,
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+async function getSocioById(id) {
+  if (!id) return null;
+  return await prisma.socio.findUnique({ where: { id } });
+}
+
+async function createSocio(data) {
+  let socioCode = data.codigo && data.codigo.trim() ? data.codigo.trim() : null;
+  if (!socioCode) {
+    try {
+      const dbRes = await prisma.$queryRaw`SELECT generar_codigo_socio() as code`;
+      if (dbRes && dbRes[0] && dbRes[0].code) {
+        socioCode = dbRes[0].code;
+      }
+    } catch (dbErr) {
+      socioCode = generateSocioCode();
+    }
+  }
+  if (!socioCode) {
+    socioCode = generateSocioCode();
+  }
+
+  return await prisma.socio.create({
+    data: {
+      codigo: socioCode,
+      nombre: data.nombre,
+      telefono: data.telefono || '',
+      correo: data.correo || '',
+      dui: data.dui || '',
+      ruta: data.ruta || ''
+    }
+  });
+}
+
+async function updateSocio(id, data) {
+  return await prisma.socio.update({
+    where: { id },
+    data: {
+      nombre: data.nombre !== undefined ? data.nombre : undefined,
+      telefono: data.telefono !== undefined ? data.telefono : undefined,
+      correo: data.correo !== undefined ? data.correo : undefined,
+      dui: data.dui !== undefined ? data.dui : undefined,
+      ruta: data.ruta !== undefined ? data.ruta : undefined
+    }
+  });
+}
+
+async function deleteSocio(id) {
+  return await prisma.socio.delete({ where: { id } });
+}
+
 module.exports = {
   initDb,
   findUserByEmail,
@@ -398,5 +533,11 @@ module.exports = {
   getPlanillas,
   createPlanilla,
   updatePlanilla,
-  liquidarPackageIndividual
+  liquidarPackageIndividual,
+  getSocios,
+  getSocioById,
+  createSocio,
+  updateSocio,
+  deleteSocio
 };
+

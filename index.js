@@ -13,6 +13,7 @@ const configRoutes = require('./routes/config');
 const sellersRoutes = require('./routes/sellers');
 const packageRoutes = require('./routes/packages');
 const planillasRoutes = require('./routes/planillas');
+const sociosRoutes = require('./routes/socios');
 
 const app = express();
 const PORT = process.env.PORT || process.env.RAILWAY_PORT || 8080;
@@ -50,7 +51,8 @@ const apiRoutesMap = [
   ['/config', configRoutes],
   ['/sellers', sellersRoutes],
   ['/packages', packageRoutes],
-  ['/planillas', planillasRoutes]
+  ['/planillas', planillasRoutes],
+  ['/socios', sociosRoutes]
 ];
 
 apiRoutesMap.forEach(([prefix, router]) => {
@@ -60,7 +62,7 @@ apiRoutesMap.forEach(([prefix, router]) => {
 
 // Fallback para React Frontend en caso de despliegue consolidado
 app.all('*', (req, res, next) => {
-  if (req.url.startsWith('/api') || req.url.startsWith('/auth') || req.url.startsWith('/routes') || req.url.startsWith('/config') || req.url.startsWith('/locations') || req.url.startsWith('/ai') || req.url.startsWith('/sellers') || req.url.startsWith('/packages') || req.url.startsWith('/planillas')) {
+  if (req.url.startsWith('/api') || req.url.startsWith('/auth') || req.url.startsWith('/routes') || req.url.startsWith('/config') || req.url.startsWith('/locations') || req.url.startsWith('/ai') || req.url.startsWith('/sellers') || req.url.startsWith('/packages') || req.url.startsWith('/planillas') || req.url.startsWith('/socios')) {
     return res.status(404).json({ error: `Ruta de API ${req.method} ${req.url} no encontrada` });
   }
   if (req.method !== 'GET') {
