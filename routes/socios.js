@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: validationError });
     }
 
-    const { nombre, telefono, correo, dui, ruta, codigo } = req.body;
+    const { nombre, telefono, correo, dui, ruta, rutas, codigo } = req.body;
 
     const socio = await createSocio({
       codigo: codigo ? codigo.trim() : undefined,
@@ -65,7 +65,8 @@ router.post('/', async (req, res) => {
       telefono: telefono ? telefono.trim() : '',
       correo: correo ? correo.trim() : '',
       dui: dui ? dui.trim() : '',
-      ruta: ruta ? ruta.trim() : ''
+      ruta: ruta ? (typeof ruta === 'string' ? ruta.trim() : '') : '',
+      rutas: rutas !== undefined ? rutas : ruta
     });
 
     return res.status(201).json({ success: true, data: socio });
@@ -88,14 +89,15 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: validationError });
     }
 
-    const { nombre, telefono, correo, dui, ruta } = req.body;
+    const { nombre, telefono, correo, dui, ruta, rutas } = req.body;
 
     const updatedSocio = await updateSocio(id, {
       nombre: nombre.trim(),
       telefono: telefono ? telefono.trim() : '',
       correo: correo ? correo.trim() : '',
       dui: dui ? dui.trim() : '',
-      ruta: ruta ? ruta.trim() : ''
+      ruta: ruta ? (typeof ruta === 'string' ? ruta.trim() : '') : '',
+      rutas: rutas !== undefined ? rutas : ruta
     });
 
     return res.json({ success: true, data: updatedSocio });

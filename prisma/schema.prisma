@@ -139,7 +139,8 @@ model Socio {
   telefono  String?
   correo    String?
   dui       String?
-  ruta      String?  // Código de la ruta asignada (ej: R-A1B)
+  ruta      String?  // Mantiene compatibilidad (Ej: "R-A1B, R-X92")
+  rutas     String?  // Lista de códigos de rutas asignadas separadas por coma (Ej: "R-A1B, R-X92")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

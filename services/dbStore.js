@@ -452,7 +452,8 @@ async function getSocios(search = '') {
       { telefono: { contains: term, mode: 'insensitive' } },
       { correo: { contains: term, mode: 'insensitive' } },
       { dui: { contains: term, mode: 'insensitive' } },
-      { ruta: { contains: term, mode: 'insensitive' } }
+      { ruta: { contains: term, mode: 'insensitive' } },
+      { rutas: { contains: term, mode: 'insensitive' } }
     ];
   }
   return await prisma.socio.findMany({
@@ -482,6 +483,16 @@ async function createSocio(data) {
     socioCode = generateSocioCode();
   }
 
+  // Normalizar lista de rutas
+  let rutasStr = '';
+  if (Array.isArray(data.rutas)) {
+    rutasStr = data.rutas.filter(Boolean).join(', ');
+  } else if (typeof data.rutas === 'string' && data.rutas.trim()) {
+    rutasStr = data.rutas.trim();
+  } else if (data.ruta && typeof data.ruta === 'string') {
+    rutasStr = data.ruta.trim();
+  }
+
   return await prisma.socio.create({
     data: {
       codigo: socioCode,
@@ -489,12 +500,24 @@ async function createSocio(data) {
       telefono: data.telefono || '',
       correo: data.correo || '',
       dui: data.dui || '',
-      ruta: data.ruta || ''
+      ruta: rutasStr,
+      rutas: rutasStr
     }
   });
 }
 
 async function updateSocio(id, data) {
+  let rutasStr = undefined;
+  if (data.rutas !== undefined) {
+    if (Array.isArray(data.rutas)) {
+      rutasStr = data.rutas.filter(Boolean).join(', ');
+    } else if (typeof data.rutas === 'string') {
+      rutasStr = data.rutas.trim();
+    }
+  } else if (data.ruta !== undefined && typeof data.ruta === 'string') {
+    rutasStr = data.ruta.trim();
+  }
+
   return await prisma.socio.update({
     where: { id },
     data: {
@@ -502,7 +525,8 @@ async function updateSocio(id, data) {
       telefono: data.telefono !== undefined ? data.telefono : undefined,
       correo: data.correo !== undefined ? data.correo : undefined,
       dui: data.dui !== undefined ? data.dui : undefined,
-      ruta: data.ruta !== undefined ? data.ruta : undefined
+      ruta: rutasStr !== undefined ? rutasStr : undefined,
+      rutas: rutasStr !== undefined ? rutasStr : undefined
     }
   });
 }

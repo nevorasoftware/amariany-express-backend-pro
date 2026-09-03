@@ -136,10 +136,14 @@ CREATE TABLE IF NOT EXISTS "Socio" (
     "telefono" VARCHAR(50),
     "correo" VARCHAR(255),
     "dui" VARCHAR(50),
-    "ruta" VARCHAR(50),
+    "ruta" VARCHAR(255),
+    "rutas" TEXT,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+ALTER TABLE "Socio" ADD COLUMN IF NOT EXISTS "rutas" TEXT;
+UPDATE "Socio" SET "rutas" = "ruta" WHERE ("rutas" IS NULL OR "rutas" = '') AND "ruta" IS NOT NULL AND "ruta" != '';
 
 -- 3.2 Crear/reemplazar la función del generador S-###
 CREATE OR REPLACE FUNCTION generar_codigo_socio()
