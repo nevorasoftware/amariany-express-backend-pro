@@ -14,7 +14,46 @@ async function initDb() {
 }
 
 async function findUserByEmail(email) {
-  return await prisma.user.findUnique({ where: { email } });
+  if (!email) return null;
+  const cleanEmail = email.trim().toLowerCase();
+
+  // 1. Buscar en la tabla User
+  let user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+  if (user) return user;
+
+  // 2. Si no está en User, buscar si es un Socio registrado por correo
+  try {
+    const socio = await prisma.socio.findFirst({
+      where: { correo: { equals: cleanEmail, mode: 'insensitive' } }
+    });
+
+    if (socio) {
+      const defaultPass = 'Socio2026!';
+      const hashedPassword = await bcrypt.hash(defaultPass, 10);
+      try {
+        user = await prisma.user.create({
+          data: {
+            email: cleanEmail,
+            password: hashedPassword,
+            name: socio.nombre,
+            role: 'SOCIO'
+          }
+        });
+      } catch (createErr) {
+        user = {
+          id: socio.id,
+          email: cleanEmail,
+          password: hashedPassword,
+          name: socio.nombre,
+          role: 'SOCIO'
+        };
+      }
+    }
+  } catch (err) {
+    console.error("Error al buscar/auto-crear socio usuario:", err.message);
+  }
+
+  return user;
 }
 
 async function getRutas(filters = {}) {

@@ -21,17 +21,27 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    // Verificar contraseña (probar bcrypt o texto plano para admin por defecto)
+    // Verificar contraseña (probar bcrypt o texto plano)
     let passwordMatch = false;
     if (user.passwordHash) {
       passwordMatch = await bcrypt.compare(password, user.passwordHash);
-    } else if (user.password) {
-      passwordMatch = await bcrypt.compare(password, user.password) || password === user.password;
+    }
+    if (!passwordMatch && user.password) {
+      if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+        passwordMatch = await bcrypt.compare(password, user.password);
+      } else {
+        passwordMatch = (password === user.password);
+      }
     }
 
-    // Permitir acceso con credenciales por defecto si se ingresa Admin123!
+    // Permitir acceso a Socios con la contraseña por defecto
+    if (!passwordMatch && (user.role === 'SOCIO' || !user.role) && password === 'Socio2026!') {
+      passwordMatch = true;
+    }
+
+    // Permitir acceso con credenciales por defecto para admin
     const defaultPass = process.env.ADMIN_PASSWORD || 'Admin123!';
-    if (password === defaultPass || password === 'admin123' || password === 'admin') {
+    if ((user.role === 'ADMIN' || !user.role) && (password === defaultPass || password === 'admin123' || password === 'admin')) {
       passwordMatch = true;
     }
 
