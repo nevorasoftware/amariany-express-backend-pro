@@ -2,11 +2,11 @@
 -- Base de datos: PostgreSQL (Railway / Amairany Express)
 
 CREATE OR REPLACE FUNCTION generar_codigo_paquete()
-RETURNS VARCHAR(7)
+RETURNS VARCHAR(10)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_codigo VARCHAR(7);
+    v_codigo VARCHAR(10);
 BEGIN
     LOOP
         v_codigo := 'P-' || (
@@ -16,7 +16,7 @@ BEGIN
                        1),
                 ''
             )
-            FROM generate_series(1, 5)
+            FROM generate_series(1, 3)
         );
 
         IF NOT EXISTS (
@@ -53,6 +53,6 @@ CREATE INDEX IF NOT EXISTS "idx_package_search" ON "Package" ("codigo", "cliente
 
 -- Comentarios explicativos
 COMMENT ON TABLE "Package" IS 'Tabla para el registro e ingreso de paquetes (Casillero) en Amairany Express';
-COMMENT ON COLUMN "Package"."codigo" IS 'Código de paquete único (Ej: P-A1B2C)';
+COMMENT ON COLUMN "Package"."codigo" IS 'Código de paquete único (Ej: P-A1B)';
 COMMENT ON COLUMN "Package"."tipoPago" IS 'Tipo de pago al recepcionar: EFECTIVO o TRANSFERENCIA';
 COMMENT ON COLUMN "Package"."estado" IS 'Estado del paquete: RECEPCIONADO, EN RUTA, ENTREGADO, CANCELADO';

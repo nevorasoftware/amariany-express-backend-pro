@@ -111,6 +111,43 @@ async function main() {
     }
   });
 
+  // 7. Crear o actualizar función de generación de códigos de paquete (P-###)
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION generar_codigo_paquete()
+      RETURNS VARCHAR(10)
+      LANGUAGE plpgsql
+      AS $$
+      DECLARE
+          v_codigo VARCHAR(10);
+      BEGIN
+          LOOP
+              v_codigo := 'P-' || (
+                  SELECT string_agg(
+                      substr('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 
+                             floor(random() * 36 + 1)::int, 
+                             1),
+                      ''
+                  )
+                  FROM generate_series(1, 3)
+              );
+
+              IF NOT EXISTS (
+                  SELECT 1
+                  FROM "Package"
+                  WHERE "codigo" = v_codigo
+              ) THEN
+                  RETURN v_codigo;
+              END IF;
+          END LOOP;
+      END;
+      $$;
+    `);
+    console.log('✅ Función generar_codigo_paquete (P-###) configurada en PostgreSQL.');
+  } catch (fnErr) {
+    console.warn('⚠️ No se pudo configurar generar_codigo_paquete en PostgreSQL (se usará fallback JS):', fnErr.message);
+  }
+
   console.log('🎉 ¡Base de datos totalmente inicializada y limpia!');
 }
 

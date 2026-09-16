@@ -5,13 +5,13 @@
 -- Base de Datos: PostgreSQL (Railway / Amairany Express)
 -- =============================================================
 
--- 1. Crear función en PostgreSQL para generar código único (ej. P-A1B2C)
+-- 1. Crear función en PostgreSQL para generar código único (ej. P-A1B)
 CREATE OR REPLACE FUNCTION generar_codigo_paquete()
-RETURNS VARCHAR(7)
+RETURNS VARCHAR(10)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_codigo VARCHAR(7);
+    v_codigo VARCHAR(10);
 BEGIN
     LOOP
         v_codigo := 'P-' || (
@@ -21,7 +21,7 @@ BEGIN
                        1),
                 ''
             )
-            FROM generate_series(1, 5)
+            FROM generate_series(1, 3)
         );
 
         -- Verificar que no exista en la tabla Package
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS "Planilla" (
 );
 
 -- Comentarios explicativos
-COMMENT ON COLUMN "Package"."codigo" IS 'Código único correlativo de paquete (Ej: P-A1B2C)';
+COMMENT ON COLUMN "Package"."codigo" IS 'Código único correlativo de paquete (Ej: P-A1B)';
 COMMENT ON COLUMN "Package"."tipoPago" IS 'Tipo de pago al recepcionar: EFECTIVO o TRANSFERENCIA';
 COMMENT ON COLUMN "Package"."imagenEntregaUrl" IS 'URL de la fotografía del comprobante de entrega o despacho';
 COMMENT ON COLUMN "Package"."fechaRecepcion" IS 'Fecha de recepción en casillero';

@@ -227,14 +227,23 @@ async function deleteSeller(id) {
   return await prisma.seller.delete({ where: { id } });
 }
 
-// Generador de Código Único de Paquete (ej. P-8A9X2)
+// Generador de Código Único de Paquete (ej. P-8A9)
 function generatePackageCode() {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let code = 'P-';
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+async function generateUniquePackageCode() {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const candidate = generatePackageCode();
+    const existing = await prisma.package.findUnique({ where: { codigo: candidate } });
+    if (!existing) return candidate;
+  }
+  return generatePackageCode();
 }
 
 // Generador de Código Único de Vendedor (ej. V-7A1)
@@ -298,11 +307,11 @@ async function createPackage(data) {
         pkgCode = dbRes[0].code;
       }
     } catch (dbErr) {
-      pkgCode = generatePackageCode();
+      pkgCode = await generateUniquePackageCode();
     }
   }
   if (!pkgCode) {
-    pkgCode = generatePackageCode();
+    pkgCode = await generateUniquePackageCode();
   }
 
   // Resolver código de ruta (rutaCodigo) de forma automática si no viene explícito
